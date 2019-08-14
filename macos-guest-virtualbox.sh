@@ -23,25 +23,25 @@ resolution="1280x800"            # VM display resolution
 # message if they do not match the genuine Mac exactly.
 # Non-genuine yet genuine-like parameters usually work.
 
-# system_profiler SPHardwareDataType
 DmiSystemFamily="MacBook Pro"        # Model Name
-DmiSystemProduct="MacBookPro11,2"    # Model Identifier
-DmiSystemSerial="NO_DEVICE_SN"       # Serial Number (system)
+DmiSystemProduct="MacBookPro15,1"    # Model Identifier
+DmiSystemSerial="C02XL3Y3KGYG"       # Serial Number (system)
 DmiSystemUuid="CAFECAFE-CAFE-CAFE-CAFE-DECAFFDECAFF" # Hardware UUID
 DmiOEMVBoxVer="string:1"             # Apple ROM Info
 DmiOEMVBoxRev="string:.23456"        # Apple ROM Info
 DmiBIOSVersion="string:MBP7.89"      # Boot ROM Version
 # ioreg -l | grep -m 1 board-id
-DmiBoardProduct="Mac-3CBD00234E554E41"
+DmiBoardProduct="Mac-937A206F2EE63C01"
 # nvram 4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:MLB | awk '{ print $NF }'
-DmiBoardSerial="NO_LOGIC_BOARD_SN"
+DmiBoardSerial="C02843401GUJP4F8C"
 MLB="bytes:$(echo -n "${DmiBoardSerial}" | base64)"
 # nvram 4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:ROM | awk '{ print $NF }'
-ROM='%aa*%bbg%cc%dd'
+ROM='92DEF66BF8AE'
 # ioreg -l -p IODeviceTree | grep \"system-id
 SYSTEM_UUID="aabbccddeeff00112233445566778899"
 # csrutil status
 SYSTEM_INTEGRITY_PROTECTION='0x10'  # '0x10' - enabled, '0x77' - disabled
+
 
 # The if-statement below converts the Mac output into VBox-readable values.
 # This is only necessary if you want to run connected Apple applications
@@ -492,7 +492,8 @@ function configure_vm() {
 VBoxManage modifyvm "${vmname}" --cpus "${cpucount}" --memory "${memorysize}" \
  --vram "${gpuvram}" --pae on --boot1 dvd --boot2 disk --boot3 none \
  --boot4 none --firmware efi --rtcuseutc on --usbxhci on --chipset ich9 \
- --mouse usbtablet --keyboard usb --audiocontroller hda --audiocodec stac9221
+ --mouse usbtablet --keyboard usb --audiocontroller hda --audiocodec stac9221 \
+ --cpuidset 00000001 000106e5 00100800 0098e3fd bfebfbff --cpu-profile "Intel Core i7-6700K" 
 
 VBoxManage setextradata "${vmname}" \
  "VBoxInternal/Devices/efi/0/Config/DmiSystemFamily" "${DmiSystemFamily}"
@@ -798,7 +799,19 @@ prompt_terminal_ready
 echo ""
 echo "Moving installation files to installer virtual disk."
 echo "The virtual machine may report that disk space is critically low; this is fine."
-kbstring='app_path="$(ls -d /Install*.app)" && mount -rw / && install_path="${app_path}/Contents/SharedSupport/" && mkdir -p "${install_path}" && cd "/Volumes/'"${macOS_release_name:0:5}-files/"'" && cp *.chunklist *.plist *.dmg "${install_path}" && cat InstallESD.part* > "${install_path}/InstallESD.dmg"'
+kbstring='app_path="$(ls -d /Install*.app)" && mount -rw /'
+send_keys
+prompt_terminal_ready
+kbstring='install_path="${app_path}/Contents/SharedSupport/" && mkdir -p "${install_path}"'
+send_keys
+prompt_terminal_ready
+kbstring='cd "/Volumes/'"${macOS_release_name:0:5}-files/"'"'
+send_keys
+prompt_terminal_ready
+kbstring='cp *.chunklist *.plist *.dmg "${install_path}"'
+send_keys
+prompt_terminal_ready
+kbstring='cat InstallESD.part* > "${install_path}/InstallESD.dmg"'
 send_keys
 
 # update InstallInfo.plist
@@ -822,7 +835,13 @@ prompt_lang_utils
 prompt_terminal_ready
 
 # Start the installer.
-kbstring='app_path="$(ls -d /Install*.app)" && cd "/${app_path}/Contents/Resources/"; ./startosinstall --volume "/Volumes/'"${vmname}"'"'
+kbstring='app_path="$(ls -d /Install*.app)"'
+send_keys
+prompt_terminal_ready
+kbstring='cd "/${app_path}/Contents/Resources/"'
+send_keys
+prompt_terminal_ready
+kbstring='./startosinstall --volume "/Volumes/'"${vmname}"'"'
 send_keys
 printf "${white_on_black}"'
 Installer started. Please wait for the license prompt to appear at
@@ -860,7 +879,13 @@ echo ""
 echo "Copying open-source APFS drivers to EFI partition"
 
 # move drivers into path on EFI partition
-kbstring='mkdir -p "/Volumes/'"${vmname}"'/mount_efi" && mount_msdos /dev/${disks[0]}s1 "/Volumes/'"${vmname}"'/mount_efi" && mkdir -p "/Volumes/'"${vmname}"'/mount_efi/EFI/driver/" && cp "/Volumes/'"${macOS_release_name:0:5}-files"'/"*.efi "/Volumes/'"${vmname}"'/mount_efi/EFI/driver/"'
+kbstring='mkdir -p "/Volumes/'"${vmname}"'/mount_efi" && mount_msdos /dev/${disks[0]}s1 "/Volumes/'"${vmname}"'/mount_efi"'
+send_keys
+prompt_terminal_ready
+kbstring='mkdir -p "/Volumes/'"${vmname}"'/mount_efi/EFI/driver/"'
+send_keys
+prompt_terminal_ready
+kbstring='cp "/Volumes/'"${macOS_release_name:0:5}-files"'/"*.efi "/Volumes/'"${vmname}"'/mount_efi/EFI/driver/"'
 send_keys
 prompt_terminal_ready
 
